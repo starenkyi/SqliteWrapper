@@ -1,0 +1,1 @@
+/usr/bin/g++    -rdynamic CMakeFiles/test_statement.dir/test_statement.cpp.o  -o ../bin/test_statement ../lib/libSqliteWrapper.a -pthread -ldl 

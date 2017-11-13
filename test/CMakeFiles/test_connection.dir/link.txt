@@ -1,0 +1,1 @@
+/usr/bin/g++    -rdynamic CMakeFiles/test_connection.dir/test_connection.cpp.o  -o ../bin/test_connection ../lib/libSqliteWrapper.a -pthread -ldl 
