@@ -2,6 +2,7 @@
 #include <cstring>
 #include <iostream>
 #include <string>
+#include <utility>
 
 #include "../include/connection.h"
 #include "../include/statement.h"
@@ -78,8 +79,6 @@ std::string testUtf8() {
     assert(s.query() == query);
 
     // test read data
-    int bytes;
-    char* temp;
     assert(conn.readInt64("SELECT count(*) FROM Person") == 5);
 
     assert(s.next());
@@ -91,20 +90,25 @@ std::string testUtf8() {
     assert(s.getDouble(3) == 90.3);
     assert(s.getBool(4) == true);
 
-    assert(!strcmp(s.getCStr(1, bytes), text1));
+    // test read string
+    assert(!strcmp(s.getCStr(1).first, text1));
+    assert(s.getCStr(1).second == static_cast<int>(strlen(text1)));
     assert(s.getString(1) == text1);
-    temp = s.getCStrCopy(1, bytes);
-    assert(!strcmp(temp, text1));
-    delete [] temp;
+    std::pair<char*,int> tempC = s.getCStrCopy(1);
+    assert(!strcmp(tempC.first, text1)
+           && tempC.second == static_cast<int>(strlen(text1)));
+    delete [] tempC.first;
     assert(s.byteLength(1) == static_cast<int>(strlen(text1)));
 
-    const char* b1 = reinterpret_cast<const char*>(s.getBlob(5, bytes));
-    assert(!strncmp(b1, blob1, bytes));
-    b1 = reinterpret_cast<const char*>(s.getBlobCopy(5, bytes));
-    assert(!strncmp(b1, blob1, bytes));
-    delete [] b1;
-    assert(s.byteLength(5) == static_cast<int>(strlen(text1))
-           && s.byteLength(5) == 5);
+    // test read blob
+    std::pair<const unsigned char*,int> tempUC1 = (s.getBlob(5));
+    assert(!strncmp(reinterpret_cast<const char*>(tempUC1.first),
+                    blob1, tempUC1.second));
+    std::pair<unsigned char*,int> tempUC2= s.getBlobCopy(5);
+    assert(!strncmp(reinterpret_cast<const char*>(tempUC2.first),
+                    blob1, tempUC2.second));
+    delete [] tempUC2.first;
+    assert(s.byteLength(5) == 5);
 
     assert(s.next());
     assert(s.getInt64(0) == 2);
@@ -114,12 +118,10 @@ std::string testUtf8() {
     assert(s.getBool(4) == false);
 
     assert(s.isNull(1));
-    assert(s.getCStr(1, bytes) == nullptr);
-    assert(s.getCStr(1, bytes) == NULL);
-    assert(bytes == 0);
-    assert(s.getCStrCopy(1, bytes) == nullptr);
-    assert(s.getCStrCopy(1, bytes) == NULL);
-    assert(bytes == 0);
+    assert(s.getCStr(1).first == nullptr);
+    assert(s.getCStr(1).second == 0);
+    tempC = s.getCStrCopy(1);
+    assert(tempC.first == nullptr && tempC.second == 0);
     assert(s.getString(1).empty());
     assert(s.byteLength(1) == 0);
 
@@ -198,20 +200,21 @@ std::string testUtf16() {
     assert(s.columnCount() == 2);
 
     // test read data
-    int bytes;
-    const char16_t* temp;
     assert(conn.readInt64("SELECT count(*) FROM Person") == 5);
 
     assert(s.next());
     assert(s.getInt64(0) == 1);
     assert(!s.isNull(1));
 
-    temp = s.getCStr16(1, bytes);
-    assert(!memcmp(temp, text1, bytes));
+    std::pair<const char16_t*, int> tempC = s.getCStr16(1);
+    assert(std::char_traits<char16_t>::compare(tempC.first,
+                                               text1, tempC.second));
+    //assert(!memcmp(reintetempC.first, text1, bytes));
     assert(s.getString16(1) == text1);
-    temp = s.getCStr16Copy(1, bytes);
-    assert(!memcmp(temp, text1, bytes));
-    delete [] temp;
+    std::pair<char16_t*, int> temp = s.getCStr16Copy(1);
+    assert(std::char_traits<char16_t>::compare(temp.first, text1, temp.second));
+    //assert(!memcmp(temp, text1, bytes));
+    delete [] temp.first;
 
     std::u16string st(text1);
     assert(s.byteLength(1) == static_cast<int>(st.size()));
@@ -219,11 +222,13 @@ std::string testUtf16() {
     assert(s.next());
     assert(s.getInt64(0) == 2);
     assert(s.isNull(1));
-    assert(s.getCStr16(1, bytes) == nullptr);
-    assert(s.getCStr16(1, bytes) == NULL);
-    assert(bytes == 0);
-    assert(s.getCStr16Copy(1, bytes) == nullptr);
-    assert(bytes == 0);
+    tempC = s.getCStr16(1);
+    assert(tempC.first == nullptr);
+    assert(tempC.second == 0);
+    temp = s.getCStr16Copy(1);
+    assert(temp.first == nullptr);
+    assert(temp.second == 0);
+    delete [] temp.first;
     assert(s.getString16(1).empty());
     assert(s.byteLength(1) == 0);
 

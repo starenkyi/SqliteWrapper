@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <string>
+#include <utility>
 
 struct sqlite3_stmt;
 struct sqlite3;
@@ -95,25 +96,20 @@ public:
 
     std::string expandedQuery() const;
 
-    const unsigned char* getBlob(const int index,
-                                 int&      bytes) const noexcept;
+    std::pair<const unsigned char*, int>
+    getBlob(const int index) const noexcept;
 
-    unsigned char* getBlobCopy(const int index,
-                               int&      bytes) const;
+    std::pair<unsigned char*, int> getBlobCopy(const int index) const;
 
     bool getBool(const int index) const noexcept;
 
-    const char* getCStr(const int index,
-                        int&      bytes) const noexcept;
+    std::pair<const char*, int> getCStr(const int index) const noexcept;
 
-    const char16_t* getCStr16(const int index,
-                              int&      bytes) const noexcept;
+    std::pair<const char16_t*, int> getCStr16(const int index) const noexcept;
 
-    char* getCStrCopy(const int index,
-                      int&      bytes) const;
+    std::pair<char*, int> getCStrCopy(const int index) const;
 
-    char16_t* getCStr16Copy(const int index,
-                            int&      bytes) const;
+    std::pair<char16_t*, int> getCStr16Copy(const int index) const;
 
     double getDouble(const int index) const noexcept;
 

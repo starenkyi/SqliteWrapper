@@ -260,38 +260,37 @@ std::string Statement::expandedQuery() const
     return result;
 }
 
-const unsigned char* Statement::getBlob(const int index,
-                                        int&      bytes) const noexcept
+std::pair<const unsigned char*, int>
+Statement::getBlob(const int index) const noexcept
 {
     assert(_statement != NULL);
     assert(_type == Statement::Select);
     assert(index >= 0);
     assert(index < _columnCount);
 
-    const unsigned char* res = reinterpret_cast<const unsigned char*>
+    const unsigned char* result = reinterpret_cast<const unsigned char*>
             (sqlite3_column_blob(_statement, index));
-    bytes = sqlite3_column_bytes(_statement, index);
 
-    return res ? res : nullptr;
+    return std::pair<const unsigned char*, int>
+    {result ? result : nullptr, sqlite3_column_bytes(_statement, index)};
 }
 
-unsigned char* Statement::getBlobCopy(const int index,
-                                      int&      bytes) const
+std::pair<unsigned char*, int> Statement::getBlobCopy(const int index) const
 {
     assert(_statement != NULL);
     assert(_type == Statement::Select);
     assert(index >= 0);
     assert(index < _columnCount);
 
-    unsigned char* res = nullptr;
     const void* const temp = sqlite3_column_blob(_statement, index);
-    bytes = sqlite3_column_bytes(_statement, index);
+    const int bytes = sqlite3_column_bytes(_statement, index);
+    unsigned char* result = nullptr;
     if (bytes) {
-        res = new unsigned char[bytes];
-        memcpy(res, temp, bytes);
+        result = new unsigned char[bytes];
+        memcpy(result, temp, bytes);
     }
 
-    return res;
+    return std::pair<unsigned char*, int> {result, bytes};
 }
 
 bool Statement::getBool(const int index) const noexcept
@@ -304,72 +303,69 @@ bool Statement::getBool(const int index) const noexcept
     return sqlite3_column_int(_statement, index);
 }
 
-const char* Statement::getCStr(const int index,
-                               int&      bytes) const noexcept
+std::pair<const char*, int> Statement::getCStr(const int index) const noexcept
 {
     assert(_statement != NULL);
     assert(_type == Statement::Select);
     assert(index >= 0);
     assert(index < _columnCount);
 
-    const char* res = reinterpret_cast<const char*>
+    const char* result = reinterpret_cast<const char*>
             (sqlite3_column_text(_statement, index));
-    bytes = sqlite3_column_bytes(_statement, index);
 
-    return res ? res : nullptr;
+    return std::pair<const char*, int>
+    {result ? result : nullptr, sqlite3_column_bytes(_statement, index)};
 }
 
-const char16_t* Statement::getCStr16(const int index,
-                                     int&      bytes) const noexcept
+std::pair<const char16_t*, int>
+Statement::getCStr16(const int index) const noexcept
 {
     assert(_statement != NULL);
     assert(_type == Statement::Select);
     assert(index >= 0);
     assert(index < _columnCount);
 
-    const char16_t* res = reinterpret_cast<const char16_t*>
-            (sqlite3_column_text16(_statement, index));
-    bytes = sqlite3_column_bytes16(_statement, index);
+    const char16_t* result = reinterpret_cast<const char16_t*>
+            (sqlite3_column_text(_statement, index));
 
-    return res ? res : nullptr;
+    return std::pair<const char16_t*, int>
+    {result ? result : nullptr, sqlite3_column_bytes(_statement, index)};
 }
 
-char* Statement::getCStrCopy(const int index,
-                             int&      bytes) const
+std::pair<char*, int>  Statement::getCStrCopy(const int index) const
 {
     assert(_statement != NULL);
     assert(_type == Statement::Select);
     assert(index >= 0);
     assert(index < _columnCount);
 
-    char* res = nullptr;
     const void* const from = sqlite3_column_text(_statement, index);
-    bytes = sqlite3_column_bytes(_statement, index);
+    const int bytes = sqlite3_column_bytes(_statement, index);
+    char* result = nullptr;
     if (from) {
-        res = new char[bytes + 1];
-        memcpy(res, from, bytes + sizeof(char));
+        result = new char[bytes + 1];
+        memcpy(result, from, bytes + sizeof(char));
     }
 
-    return res;
+    return std::pair<char*, int> {result, bytes};
 }
 
-char16_t* Statement::getCStr16Copy(const int index,
-                                   int&      bytes) const
+std::pair<char16_t*, int> Statement::getCStr16Copy(const int index) const
 {
     assert(_statement != NULL);
     assert(_type == Statement::Select);
     assert(index >= 0);
     assert(index < _columnCount);
 
-    char16_t* res = nullptr;
     const void* const from = sqlite3_column_text16(_statement, index);
-    bytes = sqlite3_column_bytes16(_statement, index);
+    const int bytes = sqlite3_column_bytes16(_statement, index);
+    char16_t* result = nullptr;
     if (from) {
-        res = new char16_t[bytes + 1];
-        memcpy(res, from, bytes + sizeof(char16_t));
+        result = new char16_t[bytes + 1];
+        memcpy(result, from, bytes + sizeof(char16_t));
     }
 
-    return res;
+    return std::pair<char16_t*, int> {result, bytes};
 }
 
 double Statement::getDouble(const int index) const noexcept

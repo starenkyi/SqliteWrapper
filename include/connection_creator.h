@@ -5,6 +5,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <utility>
 
 #include "connection.h"
 #include "connection_config.h"
@@ -33,7 +34,8 @@ public:
 
     std::vector<std::string> configsArray() const;
 
-    ConnectionConfig configByName(const std::string& name) const noexcept;
+    std::pair<ConnectionConfig, bool>
+    configByName(const std::string& name) const noexcept;
 
     int configsCount() const noexcept;
 
@@ -55,10 +57,6 @@ private:
     mutable std::mutex _mutex;
 
     std::unordered_map<std::string, ConnectionConfig> _configurations;
-
-    ConnectionConfig
-    findConfigByName(const std::string& name,
-                     bool&              success) const noexcept;
 
     bool configureConnection(Connection&        connection,
                              const std::string& script) const noexcept;

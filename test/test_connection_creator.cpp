@@ -33,8 +33,9 @@ std::string testRemoveReplaceConfig() {
     ConnectionCreator creator;
 
     // test add config
-    assert(creator.addConfig(config, "default")
-           && creator.configByName("default").equal(config));
+    assert(creator.addConfig(config, "default"));
+    std::pair<ConnectionConfig, bool> conf = creator.configByName("default");
+    assert(conf.second && conf.first.equal(config));
 
     // test if configs list is not empty
     assert(creator.configsCount() == 1);
@@ -47,11 +48,13 @@ std::string testRemoveReplaceConfig() {
 
     // test addReplace config
     creator.addOrReplaceConfig(config2, "default");
-    assert(creator.configByName("default").equal(config2));
+    conf = creator.configByName("default");
+    assert(conf.second && conf.first.equal(config2));
 
     // test replace config
-    assert(creator.replaceConfig("default", config)
-           && creator.configByName("default").equal(config));
+    assert(creator.replaceConfig("default", config));
+    conf = creator.configByName("default");
+    assert(conf.second && conf.first.equal(config));
 
     // test replace not existing config
     assert(!creator.replaceConfig("default1", config));
@@ -63,7 +66,8 @@ std::string testRemoveReplaceConfig() {
     assert(creator.configsCount() == 2);
 
     // test search not existing config
-    assert(!creator.configByName("def").equal(config));
+    conf = creator.configByName("def");
+    assert(!conf.second && !conf.first.equal(config));
 
     // test get configs name array
     auto list = creator.configsArray();
@@ -96,7 +100,7 @@ std::string testOpenConn() {
 
     // test add connection configuration
     ConnectionCreator creator;
-    creator.addConfig(config, "default");
+    assert(creator.addConfig(config, "default"));
 
     // test open connection configuration
     Connection conn = creator.newConnection("default");

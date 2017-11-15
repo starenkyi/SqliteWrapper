@@ -83,11 +83,23 @@ std::vector<std::string> ConnectionCreator::configsArray() const
     return result;
 }
 
-ConnectionConfig
+std::pair<ConnectionConfig, bool>
 ConnectionCreator::configByName(const std::string& name) const noexcept
 {
-    bool found = true;
-    return findConfigByName(name, found);
+    std::pair<ConnectionConfig, bool> result;    // default result
+
+    // lock mutex
+    LockGuard lock(_mutex);
+
+    // try find config with name 'name' (and assign to result, if any)
+    Container::const_iterator it = _configurations.find(name);
+    result.second = (it != _configurations.cend());
+    if (result.second) {
+        result.first = it->second;
+    }
+
+    // return found (or default) config with bool flag
+    return result;
 }
 
 int ConnectionCreator::configsCount() const noexcept
@@ -119,9 +131,8 @@ bool ConnectionCreator::isConfigExists(const std::string& name) const noexcept
 Connection ConnectionCreator::newConnection(const std::string& configName) const
 {
     // try find config with 'configName' (or throw if not exists)
-    bool found = true;
-    ConnectionConfig config = findConfigByName(configName, found);
-    if (!found) {
+    std::pair<ConnectionConfig, bool> conf = configByName(configName);
+    if (!conf.second) {
         std::string errorMsg("Error: \'");
         throw CreateConnException(errorMsg.append(configName)
                                   .append("\' configuration not found!"));
@@ -129,17 +140,18 @@ Connection ConnectionCreator::newConnection(const std::string& configName) const
 
     std::string openErrorMsg;   // for error message in exception object
 
-    Connection result(config.databaseName(), config.openMode(),
-                      config.cacheMode());
+    Connection result(conf.first.databaseName(), conf.first.openMode(),
+                      conf.first.cacheMode());
 
     // try open connection and throw on error
     if (!result.open()) {
         openErrorMsg = "Error opening database: ";
     // try create database schema
-    } else if (!createSchema(result, config.createSchemaScript())) {
+    } else if (!createSchema(result, conf.first.createSchemaScript())) {
         openErrorMsg = "Error creating database schema: ";
     // try configure connection
-    } else if (!configureConnection(result, config.configConnectionScript())) {
+    } else if (!configureConnection(result,
+                                    conf.first.configConnectionScript())) {
         openErrorMsg = "Error during connection configuration: ";
     }
 
@@ -166,26 +178,6 @@ bool ConnectionCreator::replaceConfig(const std::string&      name,
     } else {
         return false;
     }
-}
-
-ConnectionConfig
-ConnectionCreator::findConfigByName(const std::string& name,
-                                    bool&              success) const noexcept
-{
-    ConnectionConfig result;    // default result config
-
-    // lock mutex
-    LockGuard lock(_mutex);
-
-    // try find config with name 'name' (and assign to result, if any)
-    Container::const_iterator it = _configurations.find(name);
-    success = (it != _configurations.cend());
-    if (success) {
-        result = it->second;
-    }
-
-    // return found (or default) config
-    return result;
 }
 
 bool
